@@ -1,32 +1,25 @@
-﻿public class CarRepositoryList : ICarRepository
+﻿public class CarRepositoryDB : ICarRepository
 {
-    private int _nextId = 1;
-    private readonly List<Car> _cars = new();
 
-    public CarRepositoryList()
+    private readonly CarDbContext _context;
+
+    public CarRepositoryDB(CarDbContext dbContext)
     {
-        _cars.Add(new Car() { Id = _nextId++, Model = "BMW", Year = 2020 });
-        _cars.Add(new Car() { Id = _nextId++, Model = "Audi", Year = 2019 });
-        _cars.Add(new Car() { Id = _nextId++, Model = "Mercedes", Year = 2024 });
-
-    }
-
-    public List<Car> GetAll()
-    {
-        return new List<Car>(_cars);
+        _context = dbContext;
     }
 
 
     public Car? GetById(int id)
     {
-        return _cars.Find(c => c.Id == id);
+        return _context.Cars.FirstOrDefault(c => c.Id == id);
     }
 
     public Car Add(Car car)
     {
         car.Validate();
-        car.Id = _nextId++;
-        _cars.Add(car);
+        car.Id = 0;
+        _context.Add(car);
+        _context.SaveChanges();
         return car;
 
     }
@@ -39,7 +32,8 @@
             return null;
         }
 
-        _cars.Remove(car);
+        _context.Cars.Remove(car);
+        _context.SaveChanges();
         return car;
     }
 
@@ -56,13 +50,15 @@
         existingCar.Model = car.Model;
         existingCar.Year = car.Year;
 
+        _context.SaveChanges();
         return car;
 
     }
 
     public IEnumerable<Car> Get(int? yearAfter = null, string? modelIncludes = null, string? orderBy = null)
     {
-        IEnumerable<Car> result = new List<Car>(_cars);
+        //List<Car> result = _context.Cars.ToList();
+        IQueryable<Car> result = _context.Cars.ToList().AsQueryable();
 
         // Filtering
 
@@ -104,5 +100,3 @@
         return result;
     }
 }
-
-
